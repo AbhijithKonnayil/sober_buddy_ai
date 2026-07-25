@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from '../../../shared/hooks/useTranslation';
 import { useRouter } from '../../../shared/context/RouterContext';
 import { Button } from '../../../shared/components/Button/Button';
-import { InteractiveCounter } from './InteractiveCounter';
+import { ChatDemo } from './ChatDemo';
 import { Sparkles, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 export const HeroSection: React.FC = () => {
@@ -55,12 +55,12 @@ export const HeroSection: React.FC = () => {
           </div>
         </div>
         
-        {/* Right Column: Interactive Counter Mock */}
+        {/* Right Column: Chat Interface Mock */}
         <div className="landing-hero-visual" id="live-tracker">
           <div className="visual-wrapper">
             <div className="blob-glow bg-primary-glow"></div>
             <div className="blob-glow bg-secondary-glow"></div>
-            <InteractiveCounter />
+            <ChatDemo />
           </div>
         </div>
       </div>

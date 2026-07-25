@@ -60,6 +60,17 @@
   "landing_footer_link_privacy": "Privacy Policy",
   "landing_footer_link_terms": "Terms of Service",
 
+  "landing_chat_demo_title": "Try SoberBuddy AI",
+  "landing_chat_demo_subtitle": "Click a prompt below to see how SoberBuddy responds:",
+  "landing_chat_demo_prompt_1": "I have a craving",
+  "landing_chat_demo_prompt_2": "I'm feeling stressed",
+  "landing_chat_demo_prompt_3": "Show my coping plan",
+  "landing_chat_demo_reply_1": "I hear you. Cravings usually peak within 15 minutes. Let's take a deep breath. You've got this, one second at a time.",
+  "landing_chat_demo_reply_2": "Stress is a known trigger for you. Let's step away from what you're doing. Would listening to music or taking a short walk help right now?",
+  "landing_chat_demo_reply_3": "Your personalized coping plan lists walking, listening to music, and talking to me. Which one would you like to try first?",
+  "landing_chat_demo_user_label": "You",
+  "landing_chat_demo_ai_label": "SoberBuddy AI",
+
   "auth_title_login": "Welcome Back",
   "auth_subtitle_login": "Sign in to continue your sobriety support journey.",
   "auth_title_register": "Create an Account",
