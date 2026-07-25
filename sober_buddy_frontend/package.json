@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "deploy": "npm run build && firebase deploy --only hosting --project sober-buddy-ai --public dist",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "firebase": "^12.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
