@@ -9,7 +9,7 @@
     "scripts": {
         "serve": "firebase emulators:start --only functions",
         "deploy": "firebase deploy --only functions",
-        "test": "node --test test/**/*.test.js"
+        "test": "node --test test/chatFunctions.test.js test/securityRules.test.js"
     },
     "dependencies": {
         "@google-cloud/speech": "^6.0.0",

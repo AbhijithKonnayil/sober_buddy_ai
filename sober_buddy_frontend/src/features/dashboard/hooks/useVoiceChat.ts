@@ -2,6 +2,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createChatSession, sendChatMessage } from '../api/chat.api';
 import type { ChatMessage } from '../../../shared/types/recovery.types';
 
+interface ISpeechRecognition {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onresult: ((event: { results: { [index: number]: { [index: number]: { transcript: string } } } }) => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
 interface UseVoiceChatOptions {
   userId: string;
   role: 'sober' | 'caregiver';
@@ -15,7 +27,7 @@ export function useVoiceChat({ userId, role, isOpen }: UseVoiceChatOptions) {
   const [isListening, setIsListening] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const recognitionRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
 
   useEffect(() => {
     if (!isOpen || sessionId) {
@@ -46,6 +58,9 @@ export function useVoiceChat({ userId, role, isOpen }: UseVoiceChatOptions) {
 
   useEffect(() => {
     if (!isOpen) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSessionId(null);
       setMessages([]);
@@ -81,15 +96,23 @@ export function useVoiceChat({ userId, role, isOpen }: UseVoiceChatOptions) {
           transcript: trimmed,
         });
 
+        const reply = response.aiReply;
         setMessages((prev) => [
           ...prev,
           {
             id: response.messageId,
             sender: 'ai',
-            transcript: response.aiReply,
+            transcript: reply,
             riskFlag: response.riskFlag as ChatMessage['riskFlag'],
           },
         ]);
+
+        if (reply && 'speechSynthesis' in window) {
+          window.speechSynthesis.cancel(); // Stop any ongoing speech
+          const utterance = new SpeechSynthesisUtterance(reply);
+          utterance.lang = 'en-US';
+          window.speechSynthesis.speak(utterance);
+        }
       } catch {
         setError('voice_chat_error_send');
       } finally {
@@ -119,7 +142,7 @@ export function useVoiceChat({ userId, role, isOpen }: UseVoiceChatOptions) {
       setIsListening(false);
       setError('voice_chat_error_speech');
     };
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event) => {
       const transcript = event.results[0]?.[0]?.transcript;
       if (transcript) {
         void sendMessage(transcript);
@@ -150,7 +173,7 @@ export function useVoiceChat({ userId, role, isOpen }: UseVoiceChatOptions) {
 
 declare global {
   interface Window {
-    SpeechRecognition: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-    webkitSpeechRecognition: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    SpeechRecognition: new () => ISpeechRecognition;
+    webkitSpeechRecognition: new () => ISpeechRecognition;
   }
 }

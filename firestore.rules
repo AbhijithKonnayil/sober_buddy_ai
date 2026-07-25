@@ -22,7 +22,11 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isLinkedCaregiver(userId);
-      allow create: if isOwner(userId)
+      allow create: if (isOwner(userId)
+          || (isSignedIn()
+            && request.resource.data.role == 'sober'
+            && request.resource.data.onboardingComplete == false
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'caregiver'))
         && request.resource.data.role in ['sober', 'caregiver']
         && request.resource.data.displayName is string
         && request.resource.data.displayName.size() < 100
@@ -38,6 +42,7 @@ service cloud.firestore {
     match /soberProfiles/{soberId} {
       allow read: if isOwner(soberId) || isLinkedCaregiver(soberId);
       allow create, update: if (isOwner(soberId) || isLinkedCaregiver(soberId))
+        && (isOwner(soberId) || request.resource.data.confirmedBySober == false)
         && request.resource.data.substance is string
         && request.resource.data.substance.size() < 100
         && request.resource.data.triggers is list
@@ -80,7 +85,7 @@ service cloud.firestore {
           || request.auth.uid == resource.data.caregiverId);
       allow create: if isSignedIn()
         && request.auth.uid == request.resource.data.caregiverId
-        && request.resource.data.status in ['pending', 'accepted']
+        && request.resource.data.status == 'pending'
         && request.resource.data.relationshipLabel is string
         && request.resource.data.relationshipLabel.size() < 100
         && request.resource.data.soberId is string
@@ -138,7 +143,7 @@ service cloud.firestore {
     match /alertEvents/{alertId} {
       allow read: if isSignedIn()
         && (isOwner(resource.data.soberId)
-          || request.auth.uid in resource.data.caregiverIdsNotified);
+          || isLinkedCaregiver(resource.data.soberId));
       allow write: if false;
     }
 

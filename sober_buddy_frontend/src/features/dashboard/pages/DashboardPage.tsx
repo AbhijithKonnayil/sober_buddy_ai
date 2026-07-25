@@ -7,6 +7,7 @@ import { Card } from '../../../shared/components/Card/Card';
 import { InteractiveCounter } from '../../landing/components/InteractiveCounter';
 import { VoiceChatModal } from '../components/VoiceChatModal';
 import { EmergencyScriptModal } from '../components/EmergencyScriptModal';
+import { ProfileReviewModal } from '../components/ProfileReviewModal';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { simulateLocationAlert } from '../api/chat.api';
 import {
@@ -18,6 +19,7 @@ import {
   MapPin,
   Mic,
   BookOpen,
+  ShieldAlert,
 } from 'lucide-react';
 import './DashboardPage.css';
 
@@ -35,6 +37,7 @@ export const DashboardPage: React.FC = () => {
 
   const [isChatActive, setIsChatActive] = useState(false);
   const [isPanicActive, setIsPanicActive] = useState(false);
+  const [isReviewingProfile, setIsReviewingProfile] = useState(false);
   const [locationSimulating, setLocationSimulating] = useState(false);
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
 
@@ -123,6 +126,26 @@ export const DashboardPage: React.FC = () => {
           <p className="dashboard-error" role="alert">
             {t(error)}
           </p>
+        )}
+
+        {isSober && profile && profile.filledBy === 'caregiver' && !profile.confirmedBySober && (
+          <div className="profile-pending-banner glass-effect" role="status">
+            <div className="banner-content">
+              <ShieldAlert className="banner-icon animate-pulse" size={24} aria-hidden="true" />
+              <div className="banner-text">
+                <h4 className="banner-title">{t('dashboard_sober_banner_verify_title')}</h4>
+                <p className="banner-desc">{t('dashboard_sober_banner_verify_desc')}</p>
+              </div>
+            </div>
+            <Button
+              variant="primary"
+              size="small"
+              onClick={() => setIsReviewingProfile(true)}
+              className="banner-action-btn"
+            >
+              {t('dashboard_sober_btn_review_profile')}
+            </Button>
+          </div>
         )}
 
         {isSober ? (
@@ -399,6 +422,20 @@ export const DashboardPage: React.FC = () => {
         profile={profile}
         contact={contact}
       />
+
+      {isSober && (
+        <ProfileReviewModal
+          isOpen={isReviewingProfile}
+          onClose={() => setIsReviewingProfile(false)}
+          onConfirm={async () => {
+            setIsReviewingProfile(false);
+            await refresh();
+          }}
+          soberId={soberId}
+          initialProfile={profile}
+          initialContact={contact}
+        />
+      )}
     </div>
   );
 };

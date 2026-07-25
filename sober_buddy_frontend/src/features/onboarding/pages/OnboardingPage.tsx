@@ -144,12 +144,11 @@ export const OnboardingPage: React.FC = () => {
         await setDoc(doc(db, 'links', `${mockSoberId}_${user.uid}`), {
           soberId: mockSoberId,
           caregiverId: user.uid,
-          status: 'accepted',
+          status: 'pending',
           relationshipLabel: caregiverRelation,
           canReceiveLocationAlerts: true,
           canReceiveRiskAlerts: true,
-          createdAt: serverTimestamp(),
-          acceptedAt: serverTimestamp()
+          createdAt: serverTimestamp()
         });
 
         // 4. Update Caregiver user doc
