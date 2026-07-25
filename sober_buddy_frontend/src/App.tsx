@@ -1,8 +1,14 @@
-import { LandingPage } from './features/landing/pages/LandingPage';
+import { AuthProvider } from './shared/context/AuthContext';
+import { RouterProvider } from './shared/context/RouterContext';
+import { AppRouter } from './routes/AppRouter';
 
 function App() {
   return (
-    <LandingPage />
+    <AuthProvider>
+      <RouterProvider>
+        <AppRouter />
+      </RouterProvider>
+    </AuthProvider>
   );
 }
 

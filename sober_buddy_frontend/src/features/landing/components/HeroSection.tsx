@@ -1,11 +1,13 @@
 import React from 'react';
 import { useTranslation } from '../../../shared/hooks/useTranslation';
+import { useRouter } from '../../../shared/context/RouterContext';
 import { Button } from '../../../shared/components/Button/Button';
 import { InteractiveCounter } from './InteractiveCounter';
 import { Sparkles, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 export const HeroSection: React.FC = () => {
   const { t } = useTranslation();
+  const { navigate } = useRouter();
 
   const handleScrollToDemo = () => {
     const demoElement = document.getElementById('live-tracker');
@@ -36,7 +38,7 @@ export const HeroSection: React.FC = () => {
           </p>
           
           <div className="landing-hero-actions">
-            <Button variant="primary" size="large">
+            <Button variant="primary" size="large" onClick={() => navigate('auth')}>
               {t('landing_hero_btn_start')}
               <ChevronRight size={18} />
             </Button>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../../shared/hooks/useTranslation';
+import { useRouter } from '../../../shared/context/RouterContext';
 import { Button } from '../../../shared/components/Button/Button';
 import { Card } from '../../../shared/components/Card/Card';
 import { HeroSection } from '../components/HeroSection';
@@ -9,6 +10,7 @@ import './LandingPage.css';
 
 export const LandingPage: React.FC = () => {
   const { t } = useTranslation();
+  const { navigate } = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -58,7 +60,7 @@ export const LandingPage: React.FC = () => {
           </nav>
 
           <div className="landing-auth-desktop">
-            <Button variant="glass" size="small">
+            <Button variant="glass" size="small" onClick={() => navigate('auth')}>
               {t('landing_nav_btn_signin')}
             </Button>
           </div>
@@ -101,7 +103,7 @@ export const LandingPage: React.FC = () => {
                 {t('landing_nav_link_docs')}
               </a>
               <hr className="mobile-divider" />
-              <Button variant="glass" size="medium" onClick={() => setMobileMenuOpen(false)}>
+              <Button variant="glass" size="medium" onClick={() => navigate('auth')}>
                 {t('landing_nav_btn_signin')}
               </Button>
             </nav>
@@ -144,7 +146,7 @@ export const LandingPage: React.FC = () => {
               <h2 className="cta-title">{t('landing_cta_title')}</h2>
               <p className="cta-subtitle">{t('landing_cta_subtitle')}</p>
               <div className="cta-actions">
-                <Button variant="primary" size="large">
+                <Button variant="primary" size="large" onClick={() => navigate('auth')}>
                   {t('landing_cta_btn_primary')}
                   <ArrowRight size={18} />
                 </Button>
