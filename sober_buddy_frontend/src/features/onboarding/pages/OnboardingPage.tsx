@@ -29,6 +29,7 @@ export const OnboardingPage: React.FC = () => {
   const [caregiverRelation, setCaregiverRelation] = useState('');
 
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Total steps computation
   const totalSteps = isSoberRole ? 4 : 5;
@@ -50,15 +51,16 @@ export const OnboardingPage: React.FC = () => {
   };
 
   const handleNext = () => {
-    // Form validations per step
+    setFormError(null);
+
     if (!isSoberRole && step === 1 && (!soberName || !caregiverRelation)) {
-      alert('Please fill out all buddy details before continuing.');
+      setFormError(t('onboarding_error_buddy_details'));
       return;
     }
     
     const substanceStep = isSoberRole ? 1 : 2;
     if (step === substanceStep && !substance) {
-      alert('Please select a substance to continue.');
+      setFormError(t('onboarding_error_substance'));
       return;
     }
 
@@ -70,8 +72,10 @@ export const OnboardingPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    setFormError(null);
+
     if (!contactName || !contactRelation || !contactPhone) {
-      alert('Please fill out all emergency contact details.');
+      setFormError(t('onboarding_error_contact'));
       return;
     }
 
@@ -167,7 +171,7 @@ export const OnboardingPage: React.FC = () => {
       await refreshUserDoc();
     } catch (error) {
       console.error('Onboarding failed:', error);
-      alert('Failed to complete onboarding. Please try again.');
+      setFormError(t('onboarding_error_submit'));
       setLoading(false);
     }
   };
@@ -226,7 +230,7 @@ export const OnboardingPage: React.FC = () => {
           </div>
 
           {/* Stepper Progress Bar */}
-          <div className="stepper-progress-container">
+          <div className="stepper-progress-container" aria-label={t('onboarding_stepper_label')}>
             <div className="stepper-steps">
               {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
                 <div 
@@ -247,11 +251,16 @@ export const OnboardingPage: React.FC = () => {
 
           {/* Step Contents */}
           <div className="step-content-area">
+            {formError && (
+              <p className="onboarding-error" role="alert">
+                {formError}
+              </p>
+            )}
             
             {/* CAREGIVER PATH STEP 1: SOBER BUDDY DETAILS */}
             {!isSoberRole && step === 1 && (
               <div className="step-fade-in">
-                <h3 className="step-title">Buddy Profile Info</h3>
+                <h3 className="step-title">{t('onboarding_caregiver_step_buddy')}</h3>
                 <div className="onboarding-form">
                   <div className="form-group">
                     <label className="form-label" htmlFor="soberName">
@@ -264,7 +273,7 @@ export const OnboardingPage: React.FC = () => {
                       className="form-input"
                       value={soberName}
                       onChange={(e) => setSoberName(e.target.value)}
-                      placeholder="Enter their display name"
+                      placeholder={t('onboarding_placeholder_sober_name')}
                       required
                     />
                   </div>
@@ -279,7 +288,7 @@ export const OnboardingPage: React.FC = () => {
                       className="form-input"
                       value={caregiverRelation}
                       onChange={(e) => setCaregiverRelation(e.target.value)}
-                      placeholder="e.g. Mother, Sponsor, Partner"
+                      placeholder={t('onboarding_placeholder_relationship')}
                       required
                     />
                   </div>
@@ -291,7 +300,9 @@ export const OnboardingPage: React.FC = () => {
             {step === (isSoberRole ? 1 : 2) && (
               <div className="step-fade-in">
                 <h3 className="step-title">
-                  {isSoberRole ? 'What substance are you recovering from?' : `What substance is ${soberName || 'your buddy'} recovering from?`}
+                  {isSoberRole
+                    ? t('onboarding_q_substance_sober')
+                    : t('onboarding_q_substance_caregiver', { name: soberName || t('dashboard_buddy_fallback') })}
                 </h3>
                 <div className="selection-grid">
                   {substances.map((item) => (
@@ -300,6 +311,7 @@ export const OnboardingPage: React.FC = () => {
                       type="button"
                       className={`select-option-btn ${substance === item.value ? 'selected' : ''}`}
                       onClick={() => handleSubstanceToggle(item.value)}
+                      aria-pressed={substance === item.value}
                     >
                       {item.label}
                     </button>
@@ -319,6 +331,7 @@ export const OnboardingPage: React.FC = () => {
                       type="button"
                       className={`select-option-btn ${triggers.includes(item.value) ? 'selected' : ''}`}
                       onClick={() => handleTriggerToggle(item.value)}
+                      aria-pressed={triggers.includes(item.value)}
                     >
                       {item.label}
                     </button>
@@ -338,6 +351,7 @@ export const OnboardingPage: React.FC = () => {
                       type="button"
                       className={`select-option-btn ${coping.includes(item.value) ? 'selected' : ''}`}
                       onClick={() => handleCopingToggle(item.value)}
+                      aria-pressed={coping.includes(item.value)}
                     >
                       {item.label}
                     </button>
@@ -361,13 +375,13 @@ export const OnboardingPage: React.FC = () => {
                       className="form-input"
                       value={contactName}
                       onChange={(e) => setContactName(e.target.value)}
-                      placeholder="e.g. Meera"
+                      placeholder={t('onboarding_placeholder_contact_name')}
                       required
                     />
                   </div>
                   <div className="form-group">
                     <label className="form-label" htmlFor="contactRelation">
-                      Relationship
+                      {t('onboarding_label_contact_relationship')}
                     </label>
                     <input
                       id="contactRelation"
@@ -375,7 +389,7 @@ export const OnboardingPage: React.FC = () => {
                       className="form-input"
                       value={contactRelation}
                       onChange={(e) => setContactRelation(e.target.value)}
-                      placeholder="e.g. Mother, Sponsor, Friend"
+                      placeholder={t('onboarding_placeholder_contact_relation')}
                       required
                     />
                   </div>
@@ -389,7 +403,7 @@ export const OnboardingPage: React.FC = () => {
                       className="form-input"
                       value={contactPhone}
                       onChange={(e) => setContactPhone(e.target.value)}
-                      placeholder="e.g. +91XXXXXXXXXX"
+                      placeholder={t('onboarding_placeholder_contact_phone')}
                       required
                     />
                   </div>
@@ -429,8 +443,8 @@ export const OnboardingPage: React.FC = () => {
                 <ArrowRight size={16} />
               </Button>
             ) : (
-              <Button variant="primary" size="large" onClick={handleSubmit} disabled={loading}>
-                {loading ? 'Submitting...' : t('onboarding_btn_submit')}
+              <Button variant="primary" size="large" onClick={handleSubmit} disabled={loading} aria-busy={loading}>
+                {loading ? t('onboarding_btn_submitting') : t('onboarding_btn_submit')}
                 <ShieldCheck size={18} />
               </Button>
             )}

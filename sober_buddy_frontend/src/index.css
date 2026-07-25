@@ -92,3 +92,19 @@ a:hover {
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-glass);
 }
+
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--spacing-md);
+  z-index: 1000;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-primary);
+  color: var(--color-bg-base);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.skip-link:focus {
+  top: var(--spacing-md);
+}

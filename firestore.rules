@@ -1,0 +1,150 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function linkPath(soberId) {
+      return /databases/$(database)/documents/links/$(soberId + '_' + request.auth.uid);
+    }
+
+    function isLinkedCaregiver(soberId) {
+      return isSignedIn()
+        && exists(linkPath(soberId))
+        && get(linkPath(soberId)).data.status == 'accepted';
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isLinkedCaregiver(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.role in ['sober', 'caregiver']
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() < 100
+        && request.resource.data.onboardingComplete is bool;
+      allow update: if isOwner(userId)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() < 100
+        && request.resource.data.onboardingComplete is bool;
+      allow delete: if false;
+    }
+
+    match /soberProfiles/{soberId} {
+      allow read: if isOwner(soberId) || isLinkedCaregiver(soberId);
+      allow create, update: if (isOwner(soberId) || isLinkedCaregiver(soberId))
+        && request.resource.data.substance is string
+        && request.resource.data.substance.size() < 100
+        && request.resource.data.triggers is list
+        && request.resource.data.triggers.size() <= 20
+        && request.resource.data.copingStrategies is list
+        && request.resource.data.copingStrategies.size() <= 20
+        && request.resource.data.riskTier in ['low', 'medium', 'high']
+        && request.resource.data.filledBy in ['self', 'caregiver']
+        && request.resource.data.confirmedBySober is bool;
+      allow delete: if false;
+    }
+
+    match /emergencyContacts/{contactId} {
+      allow read: if isSignedIn()
+        && (isOwner(resource.data.soberId) || isLinkedCaregiver(resource.data.soberId));
+      allow create: if isSignedIn()
+        && (isOwner(request.resource.data.soberId) || isLinkedCaregiver(request.resource.data.soberId))
+        && request.resource.data.name is string
+        && request.resource.data.name.size() < 100
+        && request.resource.data.relationship is string
+        && request.resource.data.relationship.size() < 100
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() < 30
+        && request.resource.data.notifyConsent is bool;
+      allow update: if isSignedIn()
+        && (isOwner(resource.data.soberId) || isLinkedCaregiver(resource.data.soberId))
+        && request.resource.data.name is string
+        && request.resource.data.name.size() < 100
+        && request.resource.data.relationship is string
+        && request.resource.data.relationship.size() < 100
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() < 30
+        && request.resource.data.notifyConsent is bool;
+      allow delete: if false;
+    }
+
+    match /links/{linkId} {
+      allow read: if isSignedIn()
+        && (request.auth.uid == resource.data.soberId
+          || request.auth.uid == resource.data.caregiverId);
+      allow create: if isSignedIn()
+        && request.auth.uid == request.resource.data.caregiverId
+        && request.resource.data.status in ['pending', 'accepted']
+        && request.resource.data.relationshipLabel is string
+        && request.resource.data.relationshipLabel.size() < 100
+        && request.resource.data.soberId is string
+        && request.resource.data.caregiverId is string;
+      allow update: if isSignedIn()
+        && (request.auth.uid == resource.data.soberId
+          || request.auth.uid == resource.data.caregiverId)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['soberId', 'caregiverId']))
+        && (request.auth.uid == resource.data.soberId
+          || !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status']));
+      allow delete: if false;
+    }
+
+    match /chatSessions/{sessionId} {
+      allow read, create: if isSignedIn()
+        && request.auth.uid == (request.method == 'create'
+          ? request.resource.data.userId
+          : resource.data.userId);
+      allow update: if isSignedIn()
+        && request.auth.uid == resource.data.userId
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['userId', 'role', 'startedAt']));
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+          && request.auth.uid == get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId;
+        allow create: if isSignedIn()
+          && request.auth.uid == get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId
+          && request.resource.data.transcript is string
+          && request.resource.data.transcript.size() < 5000
+          && request.resource.data.sender in ['user', 'ai'];
+        allow update, delete: if false;
+      }
+    }
+
+    match /flaggedLocations/{locId} {
+      allow read: if isSignedIn()
+        && (isOwner(resource.data.soberId) || isLinkedCaregiver(resource.data.soberId));
+      allow create, update: if isSignedIn()
+        && (isOwner(request.resource.data.soberId) || isLinkedCaregiver(request.resource.data.soberId))
+        && request.resource.data.soberId is string
+        && request.resource.data.address is string
+        && request.resource.data.address.size() < 300;
+      allow delete: if false;
+    }
+
+    match /locationPings/{soberId}/pings/{pingId} {
+      allow read: if isOwner(soberId)
+        || (isLinkedCaregiver(soberId)
+          && get(linkPath(soberId)).data.canReceiveLocationAlerts == true);
+      allow create: if isOwner(soberId);
+      allow update, delete: if false;
+    }
+
+    match /alertEvents/{alertId} {
+      allow read: if isSignedIn()
+        && (isOwner(resource.data.soberId)
+          || request.auth.uid in resource.data.caregiverIdsNotified);
+      allow write: if false;
+    }
+
+    match /educationalContent/{contentId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}

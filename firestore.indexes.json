@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "alertEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "soberId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

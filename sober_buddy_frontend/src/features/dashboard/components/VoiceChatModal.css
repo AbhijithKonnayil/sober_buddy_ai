@@ -1,0 +1,71 @@
+.voice-chat-modal {
+  max-width: 520px;
+}
+
+.voice-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: var(--spacing-md);
+}
+
+.voice-message-row {
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.voice-message-row.user {
+  border-left: 3px solid var(--color-primary);
+}
+
+.voice-message-row.ai {
+  border-left: 3px solid var(--color-accent);
+}
+
+.voice-message-label {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-xs);
+}
+
+.voice-input-form {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.voice-text-input {
+  flex: 1;
+}
+
+.voice-error {
+  color: var(--color-warning);
+  font-size: var(--text-sm);
+  margin-bottom: var(--spacing-sm);
+}
+
+.waveform-bar.active {
+  animation: pulse-bar 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-bar {
+  from { transform: scaleY(0.4); opacity: 0.5; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

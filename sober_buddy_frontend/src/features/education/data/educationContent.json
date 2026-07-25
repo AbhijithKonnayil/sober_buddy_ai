@@ -1,0 +1,44 @@
+[
+  {
+    "id": "withdrawal-alcohol",
+    "title": "Understanding Alcohol Withdrawal",
+    "substance": "alcohol",
+    "tags": ["withdrawal", "safety"],
+    "body": "Alcohol withdrawal can range from mild anxiety to serious symptoms. Seek medical help if you experience seizures, confusion, or severe shaking. Hydration, rest, and a trusted contact nearby reduce risk during early recovery."
+  },
+  {
+    "id": "withdrawal-opioids",
+    "title": "Opioid Withdrawal & Overdose Risk",
+    "substance": "opioids",
+    "tags": ["withdrawal", "overdose", "safety"],
+    "body": "Opioid withdrawal is uncomfortable but rarely fatal on its own. Overdose risk rises after periods of abstinence due to lowered tolerance. Keep naloxone accessible if available, and never use alone. Call emergency services for breathing difficulty or unresponsiveness."
+  },
+  {
+    "id": "stages-recovery",
+    "title": "Stages of Recovery",
+    "substance": "general",
+    "tags": ["recovery", "education"],
+    "body": "Recovery is not linear. Early stages focus on safety and stabilization. Middle stages build coping skills and routines. Long-term recovery involves identity, relationships, and meaning beyond substance use. Setbacks are common — they are signals, not failures."
+  },
+  {
+    "id": "harm-reduction",
+    "title": "Harm Reduction Basics",
+    "substance": "general",
+    "tags": ["harm-reduction", "safety"],
+    "body": "Harm reduction meets people where they are. Strategies include using with someone present, carrying naloxone for opioid risk, pacing use, and planning safer environments. The goal is reducing harm while building pathways toward change."
+  },
+  {
+    "id": "caregiver-relapse",
+    "title": "How to Talk During Relapse Risk",
+    "substance": "general",
+    "tags": ["caregiver", "communication"],
+    "body": "Stay calm and non-confrontational. Avoid shame, lectures, or willpower framing. Ask what they need right now. Offer one concrete support step — a walk, a call, or sitting together. Escalate to professional help if there is immediate danger."
+  },
+  {
+    "id": "craving-science",
+    "title": "Why Cravings Peak and Pass",
+    "substance": "general",
+    "tags": ["cravings", "coping"],
+    "body": "Cravings are time-limited brain signals, often peaking within 15–20 minutes. Grounding, movement, and reaching out to support interrupt the cycle. Your personalized coping plan exists because these strategies work for you specifically."
+  }
+]

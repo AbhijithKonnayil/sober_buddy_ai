@@ -28,22 +28,22 @@ export const AuthPage: React.FC = () => {
 
     // Basic Validation
     if (!email || !password) {
-      setError('Please fill out all required fields.');
+      setError(t('auth_error_required'));
       return;
     }
 
     if (!isLogin && password !== confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('auth_error_password_mismatch'));
       return;
     }
 
     if (!isLogin && password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+      setError(t('auth_error_password_length'));
       return;
     }
 
     if (!isLogin && !displayName) {
-      setError('Please provide a display name.');
+      setError(t('auth_error_name_required'));
       return;
     }
 
@@ -59,9 +59,9 @@ export const AuthPage: React.FC = () => {
       console.error(err);
       const firebaseError = err as { code?: string; message?: string };
       if (firebaseError.code === 'auth/email-already-in-use') {
-        setError('This email is already registered.');
+        setError(t('auth_error_email_in_use'));
       } else if (firebaseError.code === 'auth/invalid-credential') {
-        setError('Invalid email or password.');
+        setError(t('auth_error_invalid_credentials'));
       } else {
         setError(firebaseError.message || t('auth_error_generic'));
       }
@@ -74,9 +74,14 @@ export const AuthPage: React.FC = () => {
       <div className="auth-glow"></div>
       
       <div className="auth-container">
-        <button className="back-to-landing-btn" onClick={() => navigate('landing')}>
-          <ArrowLeft size={16} />
-          <span>Back to Landing</span>
+        <button
+          type="button"
+          className="back-to-landing-btn"
+          onClick={() => navigate('landing')}
+          aria-label={t('auth_btn_back_landing')}
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+          <span>{t('auth_btn_back_landing')}</span>
         </button>
 
         <Card className="auth-card" glass={true} hoverable={false}>
@@ -108,7 +113,7 @@ export const AuthPage: React.FC = () => {
           </div>
 
           {error && (
-            <div className="auth-error-box">
+            <div className="auth-error-box" role="alert">
               <ShieldAlert size={16} />
               <span>{error}</span>
             </div>
@@ -169,8 +174,8 @@ export const AuthPage: React.FC = () => {
               <>
                 <div className="form-group">
                   <label className="form-label" htmlFor="confirmPassword">
-                    <Lock size={16} />
-                    Confirm Password
+                    <Lock size={16} aria-hidden="true" />
+                    {t('auth_label_confirm_password')}
                   </label>
                   <input
                     id="confirmPassword"
@@ -184,12 +189,14 @@ export const AuthPage: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <span className="form-label-role">{t('auth_label_role')}</span>
-                  <div className="role-selector-container">
+                  <span id="role-label" className="form-label-role">{t('auth_label_role')}</span>
+                  <div className="role-selector-container" role="radiogroup" aria-labelledby="role-label">
                     <button
                       type="button"
                       className={`role-option-btn ${role === 'sober' ? 'selected' : ''}`}
                       onClick={() => setRole('sober')}
+                      role="radio"
+                      aria-checked={role === 'sober'}
                     >
                       {t('auth_role_sober')}
                     </button>
@@ -197,6 +204,8 @@ export const AuthPage: React.FC = () => {
                       type="button"
                       className={`role-option-btn ${role === 'caregiver' ? 'selected' : ''}`}
                       onClick={() => setRole('caregiver')}
+                      role="radio"
+                      aria-checked={role === 'caregiver'}
                     >
                       {t('auth_role_caregiver')}
                     </button>
@@ -205,8 +214,8 @@ export const AuthPage: React.FC = () => {
               </>
             )}
 
-            <Button variant="primary" size="large" type="submit" className="auth-submit-btn" disabled={formLoading}>
-              {formLoading ? 'Processing...' : (isLogin ? t('auth_btn_login') : t('auth_btn_register'))}
+            <Button variant="primary" size="large" type="submit" className="auth-submit-btn" disabled={formLoading} aria-busy={formLoading}>
+              {formLoading ? t('auth_btn_processing') : (isLogin ? t('auth_btn_login') : t('auth_btn_register'))}
             </Button>
           </form>
 

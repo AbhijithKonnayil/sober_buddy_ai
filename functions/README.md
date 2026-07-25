@@ -2,6 +2,47 @@
 
 This document defines the backend architecture and development conventions for SoberBuddy AI. All new features and modifications must follow these guidelines.
 
+## Local Firebase Functions setup
+
+### Prerequisites
+- Install the Firebase CLI: `npm install -g firebase-tools`
+- Install Java Runtime (required by the emulator suite): https://www.java.com/
+- Make sure Node.js 20 is installed
+
+### One-time setup
+1. Sign in to Firebase:
+   `firebase login`
+2. Select or create a Firebase project:
+   `firebase use --add`
+3. Install dependencies:
+   `cd functions && npm install`
+4. Create a Google Cloud service account and set the path in `functions/.env.local`:
+   `GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/service-account.json`
+
+### Run the emulators
+From the repo root:
+
+```bash
+firebase emulators:start --only auth,functions,firestore
+```
+
+If you want to run only functions:
+
+```bash
+firebase emulators:start --only functions
+```
+
+### Useful URLs
+- Functions emulator: http://localhost:5001
+- Firestore emulator: http://localhost:8080
+- Auth emulator: http://localhost:9099
+
+### Local environment variables
+The file `functions/.env.local` is used for local development. You can optionally set one of these for real AI replies:
+- `GEMINI_API_KEY`
+- `GOOGLE_API_KEY`
+- `OPENAI_API_KEY`
+
 ---
 
 # 1. Project Structure

@@ -1,188 +1,106 @@
-const functions = require('firebase-functions/v1');
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
-const speech = require("@google-cloud/speech");
+const {
+  resolveRiskFlag,
+  assertSessionOwner,
+} = require("./lib/chatUtils");
+const { transcribeAudioBuffer } = require("./lib/speech");
+const {
+  generateAssistantReply,
+  generateEmergencyScripts,
+} = require("./lib/aiProvider");
 
 admin.initializeApp();
 
 const firestore = admin.firestore;
-const client = new speech.SpeechClient();
 
-function buildSystemPrompt({ role = "sober", profile = {}, message = "" }) {
-  const substance = profile.substance || "your recovery journey";
-  const triggers =
-    (profile.triggers || []).join(", ") || "stress and loneliness";
-  const copingStrategies =
-    (profile.copingStrategies || []).join(", ") || "walking and reaching out";
+function requireAuth(context) {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Login required.",
+    );
+  }
+  return context.auth.uid;
+}
 
+async function getSoberProfile(userId) {
+  const profileDoc = await firestore()
+    .collection("soberProfiles")
+    .doc(userId)
+    .get();
+  return profileDoc.exists ? profileDoc.data() : {};
+}
+
+async function resolveProfileForChat(userId, role) {
   if (role === "caregiver") {
-    return `You are SoberBuddy AI acting as a caregiver coach. Help the caregiver respond to a message from a loved one in recovery. Keep the tone calm, non-judgmental, and supportive. Ground your advice in their profile: substance=${substance}, triggers=${triggers}, coping strategies=${copingStrategies}. Suggest one small next step and avoid shaming or guilt. User message: ${message}`;
-  }
-
-  return `You are SoberBuddy AI, a supportive recovery companion for a person in recovery. The user is working through substance recovery. Be warm, non-judgmental, and concise. Ground your reply in their profile: substance=${substance}, triggers=${triggers}, coping strategies=${copingStrategies}. Offer one concrete action they can take right now, and if the message sounds urgent, encourage them to reach out to a trusted person or emergency support. User message: ${message}`;
-}
-
-function resolveRiskFlag(message = "") {
-  const normalized = message.toLowerCase();
-
-  if (
-    /(hurt|suicide|self-harm|overdose|kill|emergency|panic)/.test(normalized)
-  ) {
-    return "high";
-  }
-
-  if (
-    /(craving|drink|use|relapse|lonely|stress|anxious|overwhelmed|need help|want to drink|want to use|want to relapse)/.test(
-      normalized,
-    )
-  ) {
-    return "medium";
-  }
-
-  if (/(talk|hello|hi|thanks|okay|fine|good)/.test(normalized)) {
-    return "low";
-  }
-
-  return "low";
-}
-
-async function transcribeAudioBuffer(audioBytes, languageCode = "en-US") {
-  const request = {
-    audio: {
-      content: audioBytes,
-    },
-    config: {
-      encoding: "LINEAR16",
-      sampleRateHertz: 16000,
-      languageCode,
-      model: "latest_short",
-    },
-  };
-
-  const [response] = await client.recognize(request);
-  return (
-    response.results
-      ?.map((result) => result.alternatives?.[0]?.transcript || "")
-      .join(" ")
-      .trim() || ""
-  );
-}
-
-async function generateAssistantReply({ role, message, profile }) {
-  const systemPrompt = buildSystemPrompt({ role, profile, message });
-  const fallbackReply =
-    role === "caregiver"
-      ? "Try a calm, brief response: “I’m here with you. Let’s take this one step at a time.”"
-      : "You do not have to solve this alone right now. Take one small step: breathe, drink water, or take a 5-minute walk.";
-
-  const apiKey =
-    process.env.GEMINI_API_KEY ||
-    process.env.GOOGLE_API_KEY ||
-    process.env.OPENAI_API_KEY;
-  if (apiKey) {
-    try {
-      if (process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY) {
-        const response = await fetch(
-          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" +
-            apiKey,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: systemPrompt }] }],
-            }),
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) {
-            return text;
-          }
-        }
-      }
-
-      if (process.env.OPENAI_API_KEY) {
-        const response = await fetch(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-              model: "gpt-4o-mini",
-              messages: [{ role: "system", content: systemPrompt }],
-            }),
-          },
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const text = data.choices?.[0]?.message?.content;
-          if (text) {
-            return text;
-          }
-        }
-      }
-    } catch (error) {
-      console.warn("AI reply generation failed, using fallback reply.", error);
+    const userDoc = await firestore().collection("users").doc(userId).get();
+    const linkedIds = userDoc.exists ? userDoc.data().linkedUserIds || [] : [];
+    if (linkedIds.length > 0) {
+      return getSoberProfile(linkedIds[0]);
     }
   }
 
-  return fallbackReply;
+  return getSoberProfile(userId);
 }
 
-exports.transcribeAudio = functions.https.onRequest(async (req, res) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+async function getEmergencyContact(soberId) {
+  const contactDoc = await firestore()
+    .collection("emergencyContacts")
+    .doc(`${soberId}_primary`)
+    .get();
+  return contactDoc.exists ? contactDoc.data() : {};
+}
 
-  if (req.method === "OPTIONS") {
-    res.status(204).send("");
-    return;
-  }
+async function getLinkedCaregiverIds(soberId) {
+  const linksSnap = await firestore()
+    .collection("links")
+    .where("soberId", "==", soberId)
+    .where("status", "==", "accepted")
+    .get();
 
-  if (req.method !== "POST") {
-    res.status(405).send({ error: "Method not allowed" });
-    return;
+  return linksSnap.docs
+    .map((doc) => doc.data().caregiverId)
+    .filter(Boolean);
+}
+
+exports.transcribeAudio = functions.https.onCall(async (data, context) => {
+  requireAuth(context);
+
+  const { audioBase64, languageCode = "en-US" } = data || {};
+
+  if (!audioBase64) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "audioBase64 is required.",
+    );
   }
 
   try {
-    const { audioBase64, languageCode = "en-US" } = req.body || {};
-
-    if (!audioBase64) {
-      res.status(400).send({ error: "audioBase64 is required" });
-      return;
-    }
-
     const audioBytes = Buffer.from(audioBase64, "base64");
     const transcript = await transcribeAudioBuffer(audioBytes, languageCode);
-
-    res.status(200).send({
-      transcript,
-      languageCode,
-    });
+    return { transcript, languageCode };
   } catch (error) {
     console.error("Transcription failed:", error);
-    res.status(500).send({
-      error: "Failed to transcribe audio",
-      details: error.message,
-    });
+    throw new functions.https.HttpsError(
+      "internal",
+      "Failed to transcribe audio.",
+    );
   }
 });
 
 exports.createChatSession = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
+  const authUid = requireAuth(context);
+  const role = data?.role || "sober";
+  const userId = data?.userId || authUid;
+
+  if (userId !== authUid) {
     throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Login required to start a chat session.",
+      "permission-denied",
+      "Cannot create a session for another user.",
     );
   }
 
-  const role = data?.role || "sober";
-  const userId = data?.userId || context.auth.uid;
   const sessionRef = await firestore().collection("chatSessions").add({
     userId,
     role,
@@ -199,18 +117,20 @@ exports.createChatSession = functions.https.onCall(async (data, context) => {
 });
 
 exports.sendChatMessage = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Login required to send a chat message.",
-    );
-  }
+  const authUid = requireAuth(context);
 
   const sessionId = data?.sessionId;
-  const userId = data?.userId || context.auth.uid;
+  const userId = data?.userId || authUid;
   const role = data?.role || "sober";
   const transcript = data?.transcript || data?.message || "";
   const audioBase64 = data?.audioBase64;
+
+  if (userId !== authUid) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Cannot send messages for another user.",
+    );
+  }
 
   if (!sessionId) {
     throw new functions.https.HttpsError(
@@ -244,13 +164,18 @@ exports.sendChatMessage = functions.https.onCall(async (data, context) => {
     );
   }
 
-  const profileDoc = await firestore()
-    .collection("soberProfiles")
-    .doc(userId)
-    .get();
-  const profile = profileDoc.exists ? profileDoc.data() : {};
+  try {
+    assertSessionOwner(sessionDoc.data(), authUid);
+  } catch {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "You do not have access to this chat session.",
+    );
+  }
 
+  const profile = await resolveProfileForChat(userId, role);
   const riskFlag = resolveRiskFlag(finalTranscript);
+
   const messageRef = await sessionRef.collection("messages").add({
     sender: "user",
     transcript: finalTranscript,
@@ -272,16 +197,16 @@ exports.sendChatMessage = functions.https.onCall(async (data, context) => {
     timestamp: admin.firestore.FieldValue.serverTimestamp(),
   });
 
+  const highestRiskFlag =
+    riskFlag === "high" || aiRiskFlag === "high"
+      ? "high"
+      : riskFlag === "medium" || aiRiskFlag === "medium"
+        ? "medium"
+        : "low";
+
   await sessionRef.update({
     lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
-    highestRiskFlag:
-      riskFlag === "high"
-        ? "high"
-        : aiRiskFlag === "high"
-          ? "high"
-          : riskFlag === "medium" || aiRiskFlag === "medium"
-            ? "medium"
-            : "low",
+    highestRiskFlag,
   });
 
   return {
@@ -289,7 +214,67 @@ exports.sendChatMessage = functions.https.onCall(async (data, context) => {
     messageId: messageRef.id,
     transcript: finalTranscript,
     aiReply,
-    riskFlag,
+    riskFlag: highestRiskFlag,
+  };
+});
+
+exports.generateEmergencyScript = functions.https.onCall(async (data, context) => {
+  const authUid = requireAuth(context);
+  const soberId = data?.soberId || authUid;
+
+  if (soberId !== authUid) {
+    const linkDoc = await firestore()
+      .collection("links")
+      .doc(`${soberId}_${authUid}`)
+      .get();
+
+    if (!linkDoc.exists || linkDoc.data().status !== "accepted") {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "Not authorized to generate scripts for this profile.",
+      );
+    }
+  }
+
+  const profile = await getSoberProfile(soberId);
+  const contact = await getEmergencyContact(soberId);
+  const scripts = await generateEmergencyScripts({ profile, contact });
+
+  return {
+    soberId,
+    ...scripts,
+  };
+});
+
+exports.simulateLocationAlert = functions.https.onCall(async (data, context) => {
+  const authUid = requireAuth(context);
+  const soberId = data?.soberId || authUid;
+  const locationLabel = data?.locationLabel || "High-risk area";
+
+  if (soberId !== authUid) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Only the sober user can simulate their location alerts.",
+    );
+  }
+
+  const caregiverIds = await getLinkedCaregiverIds(soberId);
+  const alertRef = await firestore().collection("alertEvents").add({
+    soberId,
+    caregiverIdsNotified: caregiverIds,
+    triggerType: "location",
+    sourceId: `simulated_${Date.now()}`,
+    locationLabel,
+    soberRespondedFirst: true,
+    status: "pending",
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return {
+    alertId: alertRef.id,
+    soberId,
+    caregiverIdsNotified: caregiverIds,
+    status: "pending",
   };
 });
 
@@ -307,32 +292,34 @@ exports.onMessageCreated = functions.firestore
     const riskFlag =
       message.riskFlag || resolveRiskFlag(message.transcript || "");
     const sessionRef = firestore().collection("chatSessions").doc(sessionId);
+    const sessionData = (await sessionRef.get()).data() || {};
+    const soberId = sessionData.userId;
 
     await sessionRef.update({
       highestRiskFlag: riskFlag,
       lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
-    if (riskFlag === "high") {
-      await firestore()
-        .collection("alertEvents")
-        .add({
-          soberId: (await sessionRef.get()).data()?.userId || null,
-          caregiverIdsNotified: [],
-          triggerType: "chat_risk",
-          sourceId: messageId,
-          soberRespondedFirst: false,
-          status: "pending",
-          createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        });
+    if (riskFlag === "high" && soberId) {
+      const caregiverIds = await getLinkedCaregiverIds(soberId);
+      await firestore().collection("alertEvents").add({
+        soberId,
+        caregiverIdsNotified: caregiverIds,
+        triggerType: "chat_risk",
+        sourceId: messageId,
+        soberRespondedFirst: false,
+        status: "pending",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
     }
 
     return null;
   });
 
 module.exports = {
-  buildSystemPrompt,
-  resolveRiskFlag,
+  ...module.exports,
+  ...require("./lib/chatUtils"),
   transcribeAudioBuffer,
   generateAssistantReply,
+  generateEmergencyScripts,
 };

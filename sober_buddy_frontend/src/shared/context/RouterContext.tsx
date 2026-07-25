@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 
-export type Route = 'landing' | 'auth' | 'onboarding' | 'dashboard';
+export type Route = 'landing' | 'auth' | 'onboarding' | 'dashboard' | 'education';
 
 interface RouterContextType {
   currentRoute: Route;

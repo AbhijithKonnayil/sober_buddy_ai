@@ -1,0 +1,15 @@
+.script-loading,
+.script-error {
+  padding: var(--spacing-md);
+  text-align: center;
+}
+
+.script-error {
+  color: var(--color-warning);
+}
+
+.opioid-warning {
+  margin-top: var(--spacing-sm);
+  font-size: var(--text-sm);
+  color: var(--color-warning);
+}
