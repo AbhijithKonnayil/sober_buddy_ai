@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '../../../shared/hooks/useTranslation';
 import { Card } from '../../../shared/components/Card/Card';
-import { MessageSquare, Send, Sparkles, User } from 'lucide-react';
+import { MessageSquare, Send, Sparkles, User, Mic } from 'lucide-react';
 import './ChatDemo.css';
 
 interface Message {
@@ -21,30 +21,136 @@ export const ChatDemo: React.FC = () => {
     }
   ]);
 
+  const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isVoiceRecording, setIsVoiceRecording] = useState(false);
 
-  const handlePromptClick = (promptKey: string, replyKey: string) => {
-    if (isTyping) return;
+  const recognitionRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Speech Recognition initialization
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition; // eslint-disable-line @typescript-eslint/no-explicit-any
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = true;
+      rec.interimResults = true;
+      rec.lang = 'en-US';
+
+      rec.onresult = (event: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; ++i) {
+          fullTranscript += event.results[i][0].transcript;
+        }
+        setInputText(fullTranscript);
+      };
+
+      rec.onerror = (event: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+        console.error('Speech recognition error:', event.error);
+        setIsVoiceRecording(false);
+      };
+
+      rec.onend = () => {
+        setIsVoiceRecording(false);
+      };
+
+      recognitionRef.current = rec;
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, []);
+
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in this browser. Please try Chrome or Safari.');
+      return;
+    }
+
+    if (isVoiceRecording) {
+      recognitionRef.current.stop();
+      setIsVoiceRecording(false);
+    } else {
+      setIsVoiceRecording(true);
+      try {
+        recognitionRef.current.start();
+      } catch (err) {
+        console.error('Error starting recognition:', err);
+        setIsVoiceRecording(false);
+      }
+    }
+  };
+
+  const handleSendText = (textToSend: string) => {
+    if (!textToSend.trim() || isTyping) return;
+
+    // Stop voice if still recording
+    if (isVoiceRecording && recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore
+      }
+      setIsVoiceRecording(false);
+    }
 
     const userMsg: Message = {
       sender: 'user',
-      text: t(promptKey),
+      text: textToSend,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
     setMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
 
-    // Simulate AI thinking and typing response
+    const lower = textToSend.toLowerCase();
+    let reply = '';
+    
+    if (lower.includes('craving') || lower.includes('drink') || lower.includes('smoke') || lower.includes('use')) {
+      reply = "Cravings can feel intense, but they usually peak within 15 minutes. Try taking 5 slow, deep breaths, or step away for a short walk. You've got this.";
+    } else if (lower.includes('stress') || lower.includes('anxious') || lower.includes('anxiety') || lower.includes('overwhelmed')) {
+      reply = "Stress is a very common trigger. Let's take a pause together. Try relaxing your shoulders and taking a slow breath. What is one small thing you can control right now?";
+    } else if (lower.includes('lonely') || lower.includes('loneliness') || lower.includes('sad')) {
+      reply = "Loneliness is a hard trigger, but you aren't alone. I am here to support you. Reaching out to a trusted friend or peer can also make a huge difference. Shall we try a grounding exercise?";
+    } else {
+      reply = "I hear you. Grounding yourself in the present moment is a great step in your recovery. Let's take things one step at a time today.";
+    }
+
     setTimeout(() => {
       const aiReply: Message = {
         sender: 'ai',
-        text: t(replyKey),
+        text: reply,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, aiReply]);
       setIsTyping(false);
     }, 1200);
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputText.trim()) return;
+    const text = inputText;
+    setInputText('');
+    handleSendText(text);
+  };
+
+  const handlePromptClick = (promptKey: string) => {
+    if (isTyping) return;
+    setInputText('');
+    handleSendText(t(promptKey));
   };
 
   const prompts = [
@@ -105,6 +211,7 @@ export const ChatDemo: React.FC = () => {
             </div>
           </div>
         )}
+        <div ref={chatEndRef} />
       </div>
 
       {/* Prompts list */}
@@ -116,7 +223,7 @@ export const ChatDemo: React.FC = () => {
               key={idx}
               type="button"
               className="chat-prompt-btn"
-              onClick={() => handlePromptClick(p.promptKey, p.replyKey)}
+              onClick={() => handlePromptClick(p.promptKey)}
               disabled={isTyping}
             >
               {p.label}
@@ -125,18 +232,32 @@ export const ChatDemo: React.FC = () => {
         </div>
       </div>
 
-      {/* Mock Textbox Footer */}
-      <div className="chat-demo-footer">
+      {/* Real Textbox / Voice Input Footer */}
+      <form onSubmit={handleFormSubmit} className="chat-demo-footer">
+        <button 
+          type="button" 
+          onClick={toggleVoiceInput}
+          className={`landing-voice-mic-btn ${isVoiceRecording ? 'recording' : ''}`}
+          title="Speak to dictate"
+        >
+          <Mic size={16} />
+        </button>
         <input 
           type="text" 
-          placeholder="Ask SoberBuddy..." 
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          placeholder={isVoiceRecording ? 'Listening... tap again to stop' : 'Ask SoberBuddy...'} 
           className="chat-demo-input" 
-          disabled 
+          disabled={isVoiceRecording}
         />
-        <button className="chat-send-btn" disabled>
+        <button 
+          type="submit" 
+          className="chat-send-btn active" 
+          disabled={!inputText.trim() || isTyping}
+        >
           <Send size={16} />
         </button>
-      </div>
+      </form>
     </Card>
   );
 };

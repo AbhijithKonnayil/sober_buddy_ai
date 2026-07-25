@@ -7,6 +7,11 @@
     "source": "functions",
     "runtime": "nodejs20"
   },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    }
+  },
   "hosting": {
     "public": "sober_buddy_frontend/dist",
     "ignore": [

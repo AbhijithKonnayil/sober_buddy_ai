@@ -1,9 +1,6 @@
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
-const {
-  resolveRiskFlag,
-  assertSessionOwner,
-} = require("./lib/chatUtils");
+const { resolveRiskFlag, assertSessionOwner } = require("./lib/chatUtils");
 const { transcribeAudioBuffer } = require("./lib/speech");
 const {
   generateAssistantReply,
@@ -13,13 +10,11 @@ const {
 admin.initializeApp();
 
 const firestore = admin.firestore;
+const { FieldValue } = require("firebase-admin/firestore");
 
 function requireAuth(context) {
   if (!context.auth) {
-    throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Login required.",
-    );
+    throw new functions.https.HttpsError("unauthenticated", "Login required.");
   }
   return context.auth.uid;
 }
@@ -59,9 +54,7 @@ async function getLinkedCaregiverIds(soberId) {
     .where("status", "==", "accepted")
     .get();
 
-  return linksSnap.docs
-    .map((doc) => doc.data().caregiverId)
-    .filter(Boolean);
+  return linksSnap.docs.map((doc) => doc.data().caregiverId).filter(Boolean);
 }
 
 exports.transcribeAudio = functions.https.onCall(async (data, context) => {
@@ -104,8 +97,8 @@ exports.createChatSession = functions.https.onCall(async (data, context) => {
   const sessionRef = await firestore().collection("chatSessions").add({
     userId,
     role,
-    startedAt: admin.firestore.FieldValue.serverTimestamp(),
-    lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+    startedAt: FieldValue.serverTimestamp(),
+    lastMessageAt: FieldValue.serverTimestamp(),
     highestRiskFlag: "low",
   });
 
@@ -180,7 +173,7 @@ exports.sendChatMessage = functions.https.onCall(async (data, context) => {
     sender: "user",
     transcript: finalTranscript,
     riskFlag,
-    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    timestamp: FieldValue.serverTimestamp(),
   });
 
   const aiReply = await generateAssistantReply({
@@ -194,7 +187,7 @@ exports.sendChatMessage = functions.https.onCall(async (data, context) => {
     sender: "ai",
     transcript: aiReply,
     riskFlag: aiRiskFlag,
-    timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    timestamp: FieldValue.serverTimestamp(),
   });
 
   const highestRiskFlag =
@@ -205,7 +198,7 @@ exports.sendChatMessage = functions.https.onCall(async (data, context) => {
         : "low";
 
   await sessionRef.update({
-    lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+    lastMessageAt: FieldValue.serverTimestamp(),
     highestRiskFlag,
   });
 
@@ -218,65 +211,71 @@ exports.sendChatMessage = functions.https.onCall(async (data, context) => {
   };
 });
 
-exports.generateEmergencyScript = functions.https.onCall(async (data, context) => {
-  const authUid = requireAuth(context);
-  const soberId = data?.soberId || authUid;
+exports.generateEmergencyScript = functions.https.onCall(
+  async (data, context) => {
+    const authUid = requireAuth(context);
+    const soberId = data?.soberId || authUid;
 
-  if (soberId !== authUid) {
-    const linkDoc = await firestore()
-      .collection("links")
-      .doc(`${soberId}_${authUid}`)
-      .get();
+    if (soberId !== authUid) {
+      const linkDoc = await firestore()
+        .collection("links")
+        .doc(`${soberId}_${authUid}`)
+        .get();
 
-    if (!linkDoc.exists || linkDoc.data().status !== "accepted") {
+      if (!linkDoc.exists || linkDoc.data().status !== "accepted") {
+        throw new functions.https.HttpsError(
+          "permission-denied",
+          "Not authorized to generate scripts for this profile.",
+        );
+      }
+    }
+
+    const profile = await getSoberProfile(soberId);
+    const contact = await getEmergencyContact(soberId);
+    const scripts = await generateEmergencyScripts({ profile, contact });
+
+    return {
+      soberId,
+      ...scripts,
+    };
+  },
+);
+
+exports.simulateLocationAlert = functions.https.onCall(
+  async (data, context) => {
+    const authUid = requireAuth(context);
+    const soberId = data?.soberId || authUid;
+    const locationLabel = data?.locationLabel || "High-risk area";
+
+    if (soberId !== authUid) {
       throw new functions.https.HttpsError(
         "permission-denied",
-        "Not authorized to generate scripts for this profile.",
+        "Only the sober user can simulate their location alerts.",
       );
     }
-  }
 
-  const profile = await getSoberProfile(soberId);
-  const contact = await getEmergencyContact(soberId);
-  const scripts = await generateEmergencyScripts({ profile, contact });
+    const caregiverIds = await getLinkedCaregiverIds(soberId);
+    const alertRef = await firestore()
+      .collection("alertEvents")
+      .add({
+        soberId,
+        caregiverIdsNotified: caregiverIds,
+        triggerType: "location",
+        sourceId: `simulated_${Date.now()}`,
+        locationLabel,
+        soberRespondedFirst: true,
+        status: "pending",
+        createdAt: FieldValue.serverTimestamp(),
+      });
 
-  return {
-    soberId,
-    ...scripts,
-  };
-});
-
-exports.simulateLocationAlert = functions.https.onCall(async (data, context) => {
-  const authUid = requireAuth(context);
-  const soberId = data?.soberId || authUid;
-  const locationLabel = data?.locationLabel || "High-risk area";
-
-  if (soberId !== authUid) {
-    throw new functions.https.HttpsError(
-      "permission-denied",
-      "Only the sober user can simulate their location alerts.",
-    );
-  }
-
-  const caregiverIds = await getLinkedCaregiverIds(soberId);
-  const alertRef = await firestore().collection("alertEvents").add({
-    soberId,
-    caregiverIdsNotified: caregiverIds,
-    triggerType: "location",
-    sourceId: `simulated_${Date.now()}`,
-    locationLabel,
-    soberRespondedFirst: true,
-    status: "pending",
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-  });
-
-  return {
-    alertId: alertRef.id,
-    soberId,
-    caregiverIdsNotified: caregiverIds,
-    status: "pending",
-  };
-});
+    return {
+      alertId: alertRef.id,
+      soberId,
+      caregiverIdsNotified: caregiverIds,
+      status: "pending",
+    };
+  },
+);
 
 exports.onMessageCreated = functions.firestore
   .document("chatSessions/{sessionId}/messages/{messageId}")
@@ -297,7 +296,7 @@ exports.onMessageCreated = functions.firestore
 
     await sessionRef.update({
       highestRiskFlag: riskFlag,
-      lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastMessageAt: FieldValue.serverTimestamp(),
     });
 
     if (riskFlag === "high" && soberId) {
@@ -309,7 +308,7 @@ exports.onMessageCreated = functions.firestore
         sourceId: messageId,
         soberRespondedFirst: false,
         status: "pending",
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       });
     }
 

@@ -4,7 +4,6 @@
   "landing_nav_link_counter": "Live Tracker",
   "landing_nav_link_docs": "Docs",
   "landing_nav_btn_signin": "Sign In",
-  
   "landing_hero_text_badge": "Introducing SoberBuddy AI v2.0",
   "landing_hero_text_title_part1": "Your AI Companion for",
   "landing_hero_text_title_part2": "Sobriety & Recovery",
@@ -12,7 +11,6 @@
   "landing_hero_btn_start": "Get Started Free",
   "landing_hero_btn_demo": "Interactive Demo",
   "landing_hero_label_stars": "Trusted by 10,000+ buddies",
-  
   "landing_stats_title": "Our Collective Strength",
   "landing_stats_num_days": "1,240,500+",
   "landing_stats_label_days": "Sober Days Tracked",
@@ -20,7 +18,6 @@
   "landing_stats_label_messages": "Supportive Check-ins",
   "landing_stats_num_success": "96.4%",
   "landing_stats_label_success": "Program Adherence Rate",
-  
   "landing_features_badge": "Features",
   "landing_features_title": "Designed for Real, Lasting Change",
   "landing_features_subtitle": "We combine science-backed recovery techniques with advanced AI to deliver personalized support when you need it most.",
@@ -32,8 +29,7 @@
   "landing_features_card_desc_3": "Hit the distress button to immediately trigger AI de-escalation scripts, calming prompts, and notification of supporters.",
   "landing_features_card_title_4": "Caregiver Connection",
   "landing_features_card_desc_4": "Securely share your sobriety milestones and request assistance from designated allies with complete privacy control.",
-  
-  "landing_counter_title": "Sobriety Tracker Demo",
+  "landing_counter_title": "Sobriety Tracker",
   "landing_counter_subtitle": "Select a start date to see how the tracker monitors your progress down to the second.",
   "landing_counter_label_input": "Choose your sobriety start date & time:",
   "landing_counter_btn_reset": "Reset Date",
@@ -49,17 +45,14 @@
   "landing_counter_milestone_desc_3": "30 days sober. New neural pathways are solidifying.",
   "landing_counter_milestone_title_default": "Next Goal",
   "landing_counter_milestone_desc_default": "Keep going! You're making progress every single second.",
-  
   "landing_cta_title": "Ready to Start Your Journey?",
   "landing_cta_subtitle": "You don't have to walk this path alone. Register today and get paired with your digital recovery buddy.",
   "landing_cta_btn_primary": "Start Free Trial",
   "landing_cta_btn_secondary": "Talk to an Advisor",
-  
   "landing_footer_text_tagline": "Your daily companion in recovery. Empathetic, private, and always here.",
   "landing_footer_text_copyright": "© 2026 SoberBuddy AI. All rights reserved. Created in pair-programming.",
   "landing_footer_link_privacy": "Privacy Policy",
   "landing_footer_link_terms": "Terms of Service",
-
   "landing_chat_demo_title": "Try SoberBuddy AI",
   "landing_chat_demo_subtitle": "Click a prompt below to see how SoberBuddy responds:",
   "landing_chat_demo_prompt_1": "I have a craving",
@@ -70,7 +63,6 @@
   "landing_chat_demo_reply_3": "Your personalized coping plan lists walking, listening to music, and talking to me. Which one would you like to try first?",
   "landing_chat_demo_user_label": "You",
   "landing_chat_demo_ai_label": "SoberBuddy AI",
-
   "auth_title_login": "Welcome Back",
   "auth_subtitle_login": "Sign in to continue your sobriety support journey.",
   "auth_title_register": "Create an Account",
@@ -88,7 +80,6 @@
   "auth_toggle_to_register": "Don't have an account? Register",
   "auth_toggle_to_login": "Already have an account? Sign In",
   "auth_error_generic": "Authentication failed. Please check your credentials.",
-
   "onboarding_title_sober": "Let's Personalize Your Journey",
   "onboarding_subtitle_sober": "We will customize SoberBuddy AI to target your specific needs.",
   "onboarding_title_caregiver": "Setup Support Profile",
@@ -110,14 +101,12 @@
   "onboarding_btn_next": "Next Step",
   "onboarding_btn_back": "Back",
   "onboarding_btn_submit": "Complete Onboarding",
-  
   "onboarding_substance_alcohol": "Alcohol",
   "onboarding_substance_nicotine": "Nicotine",
   "onboarding_substance_cannabis": "Cannabis",
   "onboarding_substance_prescription": "Prescription Medication",
   "onboarding_substance_opioids": "Opioids",
   "onboarding_substance_other": "Other",
-  
   "onboarding_trigger_stress": "Stress",
   "onboarding_trigger_loneliness": "Loneliness",
   "onboarding_trigger_anxiety": "Anxiety",
@@ -127,7 +116,6 @@
   "onboarding_trigger_work": "Work pressure",
   "onboarding_trigger_sleep": "Poor sleep",
   "onboarding_trigger_other": "Other",
-  
   "onboarding_coping_call": "Calling someone",
   "onboarding_coping_walk": "Going for a walk",
   "onboarding_coping_music": "Listening to music",
@@ -136,7 +124,6 @@
   "onboarding_coping_prayer": "Prayer",
   "onboarding_coping_ai": "Talking to AI",
   "onboarding_coping_other": "Other",
-
   "dashboard_welcome": "Welcome, ",
   "dashboard_btn_logout": "Log Out",
   "dashboard_sober_title": "My Recovery Hub",
@@ -152,7 +139,6 @@
   "dashboard_sober_label_consent_status": "Auto-notify Caregiver:",
   "dashboard_sober_consent_yes": "Enabled",
   "dashboard_sober_consent_no": "Disabled",
-  
   "dashboard_caregiver_title": "Caregiver Dashboard",
   "dashboard_caregiver_badge": "Linked Supporter Active",
   "dashboard_caregiver_sober_name": "Supporting: ",
@@ -169,10 +155,8 @@
   "dashboard_caregiver_alert_status_resolved": "Resolved",
   "dashboard_caregiver_alert_status_pending": "Active",
   "dashboard_caregiver_btn_coach": "Get Real-time AI Coaching",
-
   "app_loading": "Loading SoberBuddy...",
   "app_skip_link": "Skip to main content",
-
   "auth_btn_back_landing": "Back to Landing",
   "auth_label_confirm_password": "Confirm Password",
   "auth_btn_processing": "Processing...",
@@ -182,7 +166,6 @@
   "auth_error_name_required": "Please provide a display name.",
   "auth_error_email_in_use": "This email is already registered.",
   "auth_error_invalid_credentials": "Invalid email or password.",
-
   "onboarding_stepper_label": "Onboarding progress",
   "onboarding_caregiver_step_buddy": "Buddy Profile Info",
   "onboarding_q_substance_sober": "What substance are you recovering from?",
@@ -198,7 +181,6 @@
   "onboarding_error_substance": "Please select a substance to continue.",
   "onboarding_error_contact": "Please fill out all emergency contact details.",
   "onboarding_error_submit": "Failed to complete onboarding. Please try again.",
-
   "dashboard_loading": "Loading Dashboard...",
   "dashboard_error_load": "Unable to load dashboard data. Please refresh.",
   "dashboard_nav_home": "Go to landing page",
@@ -228,6 +210,9 @@
   "dashboard_voice_btn_stop": "Stop voice input",
   "dashboard_voice_btn_send": "Send",
   "dashboard_voice_btn_disconnect": "Disconnect",
+  "dashboard_voice_status_online": "Online",
+  "dashboard_voice_status_listening": "Listening...",
+  "dashboard_voice_status_typing": "Sober Buddy is typing",
   "voice_chat_error_session": "Could not start chat session. Please try again.",
   "voice_chat_error_send": "Failed to send message. Please try again.",
   "voice_chat_error_no_speech": "Voice input is not supported in this browser. Please type your message.",
@@ -242,7 +227,6 @@
   "dashboard_panic_call_contact": "Call Primary Contact:",
   "dashboard_panic_opioid_note": "Opioid recovery carries elevated overdose risk. If breathing is affected, call emergency services immediately.",
   "dashboard_panic_btn_dismiss": "Dismiss Safe Screen",
-
   "education_title": "Recovery Resources",
   "education_subtitle": "Vetted educational content to support recovery — AI chat references these instead of generating unsupported medical claims.",
   "education_btn_back": "Back to Dashboard",

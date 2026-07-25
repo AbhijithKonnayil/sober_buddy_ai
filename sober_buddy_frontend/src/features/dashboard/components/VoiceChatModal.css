@@ -1,61 +1,186 @@
 .voice-chat-modal {
-  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 560px);
+  max-width: 560px;
+  height: min(720px, calc(100vh - var(--spacing-xl) * 2));
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  text-align: left;
+}
+
+.voice-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  margin: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.voice-chat-contact {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-width: 0;
+}
+
+.voice-chat-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  color: var(--color-text-light);
+  background: var(--color-primary);
+  border-radius: 50%;
+}
+
+.voice-chat-header h3 {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.voice-chat-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: var(--spacing-xs) 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.voice-chat-presence {
+  width: 8px;
+  height: 8px;
+  background: var(--color-accent);
+  border-radius: 50%;
+}
+
+.voice-chat-presence.listening {
+  animation: chat-presence-pulse 1s ease-in-out infinite;
 }
 
 .voice-messages {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: var(--spacing-sm);
-  max-height: 240px;
   overflow-y: auto;
-  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-lg);
+  margin: 0;
+  background: rgba(var(--color-primary-rgb), 0.04);
 }
 
 .voice-message-row {
-  padding: var(--spacing-sm);
+  width: fit-content;
+  max-width: 82%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--color-bg-card);
 }
 
 .voice-message-row.user {
-  border-left: 3px solid var(--color-primary);
+  align-self: flex-end;
+  color: var(--color-text-light);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  border-bottom-right-radius: var(--spacing-xs);
 }
 
 .voice-message-row.ai {
-  border-left: 3px solid var(--color-accent);
+  align-self: flex-start;
+  border-bottom-left-radius: var(--spacing-xs);
 }
 
-.voice-message-label {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-text-muted);
-  margin-bottom: var(--spacing-xs);
+.voice-message-text {
+  margin: 0;
+  line-height: 1.45;
 }
 
 .voice-input-form {
   display: flex;
   gap: var(--spacing-sm);
   align-items: center;
-  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-md);
+  margin: 0;
+  background: var(--color-bg-card);
+  border-top: 1px solid var(--color-border);
 }
 
 .voice-text-input {
   flex: 1;
+  min-width: 0;
+  border-radius: var(--radius-lg);
 }
 
 .voice-error {
+  margin: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
   color: var(--color-warning);
+  background: rgba(var(--color-warning-rgb, 255, 165, 0), 0.1);
   font-size: var(--text-sm);
-  margin-bottom: var(--spacing-sm);
 }
 
-.waveform-bar.active {
-  animation: pulse-bar 0.8s ease-in-out infinite alternate;
+.voice-chat-empty {
+  align-self: center;
+  max-width: 82%;
+  margin: auto;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  text-align: center;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
-@keyframes pulse-bar {
-  from { transform: scaleY(0.4); opacity: 0.5; }
-  to { transform: scaleY(1); opacity: 1; }
+.voice-chat-typing {
+  display: flex;
+  gap: var(--spacing-xs);
+  align-items: center;
+  min-height: 40px;
+}
+
+.voice-chat-typing span {
+  width: 6px;
+  height: 6px;
+  background: var(--color-text-muted);
+  border-radius: 50%;
+  animation: chat-typing 1.2s ease-in-out infinite;
+}
+
+.voice-chat-typing span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.voice-chat-typing span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes chat-presence-pulse {
+  50% { opacity: 0.35; transform: scale(1.35); }
+}
+
+@keyframes chat-typing {
+  50% { opacity: 0.35; transform: translateY(-2px); }
+}
+
+@media (max-width: 600px) {
+  .voice-chat-modal {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+
+  .voice-chat-header,
+  .voice-messages,
+  .voice-input-form {
+    padding: var(--spacing-md);
+  }
 }
 
 .sr-only {

@@ -43,7 +43,20 @@ export const InteractiveCounter: React.FC = () => {
   }, [startDateStr]);
 
   const handleReset = () => {
-    setStartDateStr(getDefaultDateString());
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+
+    let timePart = '04:25'; // Fallback / Default time
+    if (startDateStr && startDateStr.includes('T')) {
+      const parts = startDateStr.split('T');
+      if (parts[1]) {
+        timePart = parts[1].slice(0, 5); // get HH:MM
+      }
+    }
+
+    setStartDateStr(`${yyyy}-${mm}-${dd}T${timePart}`);
   };
 
   // Determine current milestone translation key based on days elapsed

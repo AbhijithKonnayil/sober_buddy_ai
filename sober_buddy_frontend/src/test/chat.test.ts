@@ -23,6 +23,7 @@ vi.mock('firebase/firestore', () => {
     onSnapshot: vi.fn(),
     serverTimestamp: vi.fn().mockReturnValue('mock_timestamp'),
     getFirestore: vi.fn().mockReturnValue({}),
+    connectFirestoreEmulator: vi.fn(),
     Timestamp: {
       now: vi.fn()
     }

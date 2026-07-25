@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef } from 'react';
-import { Mic, MicOff, Send, X } from 'lucide-react';
+import { MessageCircle, Mic, MicOff, Send, X } from 'lucide-react';
 import { Button } from '../../../shared/components/Button/Button';
 import { useTranslation } from '../../../shared/hooks/useTranslation';
 import { useVoiceChat } from '../hooks/useVoiceChat';
@@ -22,6 +22,7 @@ export const VoiceChatModal: React.FC<VoiceChatModalProps> = ({
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
     messages,
@@ -52,6 +53,10 @@ export const VoiceChatModal: React.FC<VoiceChatModalProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isSending]);
+
   if (!isOpen) {
     return null;
   }
@@ -75,12 +80,25 @@ export const VoiceChatModal: React.FC<VoiceChatModalProps> = ({
         aria-labelledby={titleId}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="modal-header">
-          <h3 id={titleId}>
-            {role === 'sober'
-              ? t('dashboard_voice_modal_title_sober')
-              : t('dashboard_voice_modal_title_caregiver')}
-          </h3>
+        <div className="modal-header voice-chat-header">
+          <div className="voice-chat-contact">
+            <span className="voice-chat-avatar" aria-hidden="true">
+              <MessageCircle size={20} />
+            </span>
+            <div>
+              <h3 id={titleId}>
+                {role === 'sober'
+                  ? t('dashboard_voice_modal_title_sober')
+                  : t('dashboard_voice_modal_title_caregiver')}
+              </h3>
+              <p className="voice-chat-status">
+                <span className={`voice-chat-presence ${isListening ? 'listening' : ''}`} />
+                {isListening
+                  ? t('dashboard_voice_status_listening')
+                  : t('dashboard_voice_status_online')}
+              </p>
+            </div>
+          </div>
           <button
             ref={closeButtonRef}
             type="button"
@@ -93,46 +111,36 @@ export const VoiceChatModal: React.FC<VoiceChatModalProps> = ({
         </div>
 
         <div
-          className="voice-visualizer"
-          aria-hidden={!isListening}
-          aria-live="polite"
-        >
-          {Array.from({ length: 7 }, (_, index) => (
-            <div
-              key={index}
-              className={`waveform-bar bar-${index + 1} ${isListening ? 'active' : ''}`}
-            />
-          ))}
-        </div>
-
-        <div
-          className="voice-messages"
+          className="voice-messages voice-chat-thread"
           role="log"
           aria-live="polite"
           aria-relevant="additions"
           aria-label={t('dashboard_voice_messages_label')}
         >
           {messages.length === 0 ? (
-            <p className="voice-message-text">{t('dashboard_voice_placeholder')}</p>
+            <p className="voice-chat-empty">{t('dashboard_voice_placeholder')}</p>
           ) : (
             messages.map((message) => (
               <div
                 key={message.id}
                 className={`voice-message-row ${message.sender}`}
               >
-                <span className="voice-message-label">
-                  {message.sender === 'user'
-                    ? t('landing_chat_demo_user_label')
-                    : t('landing_chat_demo_ai_label')}
-                </span>
                 <p className="voice-message-text">{message.transcript}</p>
               </div>
             ))
           )}
+          {isSending && (
+            <div className="voice-message-row ai voice-chat-typing" aria-label={t('dashboard_voice_status_typing')}>
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
         {error && (
-          <p className="voice-error" role="alert">
+          <p id="voice-chat-error" className="voice-error" role="alert">
             {t(error)}
           </p>
         )}
@@ -153,7 +161,7 @@ export const VoiceChatModal: React.FC<VoiceChatModalProps> = ({
           />
           <Button
             type="button"
-            variant="glass"
+            variant="secondary"
             size="medium"
             onClick={isListening ? stopListening : startListening}
             aria-label={
@@ -174,15 +182,9 @@ export const VoiceChatModal: React.FC<VoiceChatModalProps> = ({
             aria-busy={isSending}
           >
             <Send size={18} aria-hidden="true" />
-            {t('dashboard_voice_btn_send')}
+            <span className="sr-only">{t('dashboard_voice_btn_send')}</span>
           </Button>
         </form>
-
-        <div className="modal-footer">
-          <Button variant="glass" size="medium" onClick={onClose}>
-            {t('dashboard_voice_btn_disconnect')}
-          </Button>
-        </div>
       </div>
     </div>
   );

@@ -1,17 +1,16 @@
-import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
-describe('Firestore security rules', () => {
-  it('denies client writes to alertEvents', () => {
-    const rules = readFileSync(resolve(__dirname, '../../firestore.rules'), 'utf8');
-    expect(rules).toContain('match /alertEvents/{alertId}');
-    expect(rules).toContain('allow write: if false');
-  });
+test("Firestore security rules: denies client writes to alertEvents", () => {
+  const rules = fs.readFileSync(path.resolve(__dirname, "../../firestore.rules"), "utf8");
+  assert.match(rules, /match \/alertEvents\/\{alertId\}/);
+  assert.match(rules, /allow write: if false/);
+});
 
-  it('requires accepted link for caregiver profile reads', () => {
-    const rules = readFileSync(resolve(__dirname, '../../firestore.rules'), 'utf8');
-    expect(rules).toContain('isLinkedCaregiver');
-    expect(rules).toContain("status == 'accepted'");
-  });
+test("Firestore security rules: requires accepted link for caregiver profile reads", () => {
+  const rules = fs.readFileSync(path.resolve(__dirname, "../../firestore.rules"), "utf8");
+  assert.match(rules, /isLinkedCaregiver/);
+  assert.match(rules, /status == 'accepted'/);
 });
